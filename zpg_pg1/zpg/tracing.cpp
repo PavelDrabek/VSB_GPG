@@ -35,9 +35,9 @@ Tracer::Tracer(const int width, const int height)
 	cubemap = new CubeMap(directory);
 
 	//sphere = Sphere(Vector3(0.0f), 3);
-	defaultMaterial = new Material(std::string("test"), Vector3(0.1f), Vector3(0.9f), Vector3(0.5f), Vector3(0.5f), 0.9f, 0.9f, 1.46f);
-	//defaultMaterial->transparency = 1.0f;
-	defaultMaterial->transparency = 0.25f;
+	defaultMaterial = new Material(std::string("test"), Vector3(0.1f), Vector3(1.0f), Vector3(1.0f), Vector3(0.0f), 0.9f, 0.9f, 1.46f);
+	defaultMaterial->transparency = 1.0f;
+	//defaultMaterial->transparency = 0.25f;
 
 	Vector3 n = Vector3(0, 1, 0);
 	Vector3 d = Vector3(10, 1, 0).Normalized();
@@ -107,10 +107,10 @@ Vector3 Tracer::TracePhong(Ray ray, int deep) {
 	/*
 	Surface* surface = surfaces[ray.geomID];
 	Triangle triangle = surface->get_triangle(ray.primID);
+
 	Material* material = surface->get_material();
 	Texture* tex_diff = material->get_texture(Material::kDiffuseMapSlot);
-	float mat_ior = material->ior;
-	float transparency = material->transparency;
+	Vector2 tuv = triangle.texture_coord(ray.u, ray.v);
 	*/
 
 	Material* material = defaultMaterial;
@@ -126,13 +126,12 @@ Vector3 Tracer::TracePhong(Ray ray, int deep) {
 	Vector3 viewReflect = normal.Reflect(viewDir);
 	Vector3 lightReflect = normal.Reflect(lightDir);
 
-	//Vector2 tuv = triangle.texture_coord(ray.u, ray.v);
 	Vector3 halfVector = Vector3(camPos - point + lightPos - point).Normalized();
 
 	float dotDif = MAX(0, normal.DotProduct(lightDir));
 	float dotSpec = pow(MAX(0, normal.DotProduct(halfVector)), 2);
 
-	Ray lightRay = Ray(point, lightDir, 0, (GetLightPos() - point).SqrL2Norm());
+	Ray lightRay = Ray(point, lightDir, 0.001f, (GetLightPos() - point).SqrL2Norm());
 
 	//rtcOccluded(*scene, lightRay);
 	Intersector::intersect(sphere, lightRay);
@@ -163,28 +162,6 @@ Vector3 Tracer::TracePhong(Ray ray, int deep) {
 		float n1 = ray.ior;
 		float n2 = ray.ior == 1 ? mat_ior : 1;
 
-		// snell law
-		/*
-		Vector3 rd = viewDir;
-		float n_ratio = n1 / n2;
-		float cos_O2 = rd.DotProduct(-normal);
-		float cos_O1 = sqrt(MAX(0, 1 - n_ratio*n_ratio * (1 - cos_O2*cos_O2)));
-		Vector3 rr = -n_ratio * rd - (n_ratio * cos_O2 + cos_O1) * normal;
-		Vector3 lr = -normal.Reflect(rr);
-
-		// fresnel equation
-		float cosi = cos_O2;
-		float cost = cos_O1;
-		float n1cosi = n1 * cosi;
-		float n1cost = n1 * cost;
-		float n2cosi = n2 * cosi;
-		float n2cost = n2 * cost;
-
-		float Rs = pow((n1cosi - n2cost) / (n1cosi + n2cost), 2);
-		float Rp = pow((n1cost - n2cosi) / (n1cost + n2cosi), 2);
-		R = (Rs + Rp) * 0.5f;
-		*/
-
 		Vector3 lr = GetRetractDir(viewDir, normal, n1, n2);
 		R = GetFresnelR(viewDir, normal, n1, n2);
 		//R = 0;
@@ -203,16 +180,6 @@ Vector3 Tracer::TracePhong(Ray ray, int deep) {
 		ambient + 
 		diffuse * dotDif * visibCoef + 
 		material->specular * dotSpec * reflected * material->reflectivity;
-
-	//cv::Vec3d P = ToColor(ambient) + 
-
-	//return transmitivity * transmitedColor * load.diffuse_color
-	//	+ reflectivity * reflected_color * load.material->reflectivity;
-
-	//return load.ambient_color +
-	//diffuse * inShadow * diffuseSlider +
-	//specular * specularSlider * reflected_color;
-
 
 	returnFinish++;
 	return phong;
