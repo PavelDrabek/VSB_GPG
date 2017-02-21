@@ -14,8 +14,9 @@ struct Ray : RTCRay
 {
 	float transparency;
 	float ior; // index of refraction
+	Vector3 collided_normal;
 
-	Ray( const Vector3 & origin, Vector3 direction, const float t_near = 0.0f, const float t_far = FLT_MAX )
+	Ray( const Vector3 & origin, Vector3 direction, const float t_near = 0.001f, const float t_far = FLT_MAX )
 	{
 		org[0] = origin.x;
 		org[1] = origin.y;
@@ -47,6 +48,14 @@ struct Ray : RTCRay
 			org[0] + dir[0] * t,
 			org[1] + dir[1] * t,
 			org[2] + dir[2] * t );
+	}
+
+	bool isCollided() {
+		return geomID != RTC_INVALID_GEOMETRY_ID && tnear >= 0;
+	}
+
+	Vector3 collidedPosition() {
+		return eval(tfar);
 	}
 };
 

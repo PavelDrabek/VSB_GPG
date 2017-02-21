@@ -25,7 +25,7 @@ public:
 
 private:
 
-	static const int maxDeep = 6;
+	static const int maxDeep = 20;
 
 	int width_; /*!< Šíøka obrazu [px]. */
 	int height_; /*!< Výška obrazu [px]. */
@@ -48,11 +48,14 @@ private:
 	Vector3 lightPos;
 
 	Vector3 GetPoint(Ray &ray, bool stepBack = true);
+	Vector3 EvalPoint(Ray &ray);
 	Vector3 GetNormal(Ray &ray);
 	Vector3 GetNormal(Triangle &triangle, Ray &ray);
 	Vector3 GetLightPos();
 	Vector3 GetLightDir(Vector3 point);
 	Vector3 GetColor(Ray &ray);
+	Vector3 GetRetractDir(Vector3 dir, Vector3 normal, float n1, float n2);
+	float GetFresnelR(Vector3 dir, Vector3 normal, float n1, float n2);
 
 	Vector3 GetCubeMapColor(Vector3 dir);
 
@@ -60,7 +63,7 @@ private:
 	Vector3 TraceLambert(Ray ray);
 	Vector3 TracePhong(Ray ray, int deep);
 
-	Sphere sphere = Sphere(Vector3(0.0f), 1);
+	Sphere sphere = Sphere(Vector3(0.0f), 0.6f);
 	Material* defaultMaterial;
 
 	std::thread m_thread;

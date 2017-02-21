@@ -77,3 +77,4 @@
 //#include "shaders.cpp"
 #include "tracing.h"
 #include "pathTracer.h"
+#include "test.h"

@@ -22,18 +22,32 @@ bool Intersector::intersect(Sphere sphere, Ray &ray)
 	float t = 0;
 	if (D == 0) {
 		t = -b * 0.5f;
-	}
-	else {
-		float t1 = (-b + D) * 0.5f;
-		float t2 = (-b - D) * 0.5f;
-		t = MIN(t1, t2);
+	} else {
+		float sqrtD = sqrt(D);
+		float t1 = (-b + sqrtD) * 0.5f;
+		float t2 = (-b - sqrtD) * 0.5f;
+		if (t1 < ray.tnear && t2 < ray.tnear) {
+			ray.geomID == RTC_INVALID_GEOMETRY_ID;
+			return false;
+		} else if (t1 > ray.tnear && t2 > ray.tnear) {
+			t = MIN(t1, t2);
+		} else if (t1 > ray.tnear) {
+			t = t1;
+		} else if (t2 > ray.tnear) {
+			t = t2;
+		} else {
+			ray.geomID == RTC_INVALID_GEOMETRY_ID;
+			return false;
+		}
 	}
 
 	ray.geomID = 0;
 	ray.tfar = t;
-	ray.tnear = 0.01f;
 	Vector3 normal = ((A + u * t) - S).Normalized();
+	ray.collided_normal = normal;
 	ray.Ng[0] = normal.x;
 	ray.Ng[1] = normal.y;
 	ray.Ng[2] = normal.z;
+
+	return true;
 }

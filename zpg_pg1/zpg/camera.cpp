@@ -188,7 +188,7 @@ Ray Camera::GenerateRay(const float sx, const float sy) const
 	direction = view_t_ * direction; // prechod do svetového souradneho systému
 	direction.Normalize();
 
-	return Ray(view_from_, direction, 0);
+	return Ray(view_from_, direction, 0.001f);
 }
 
 /*

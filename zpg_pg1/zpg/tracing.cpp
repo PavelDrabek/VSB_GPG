@@ -35,8 +35,9 @@ Tracer::Tracer(const int width, const int height)
 	cubemap = new CubeMap(directory);
 
 	//sphere = Sphere(Vector3(0.0f), 3);
-	defaultMaterial = new Material(std::string("test"), Vector3(0.1f), Vector3(0.9f), Vector3(0.5f), Vector3(0.0f), 0.9f, 0.1f, 1.5f);
-	defaultMaterial->transparency = 1.0f;
+	defaultMaterial = new Material(std::string("test"), Vector3(0.1f), Vector3(0.9f), Vector3(0.5f), Vector3(0.5f), 0.9f, 0.9f, 1.46f);
+	//defaultMaterial->transparency = 1.0f;
+	defaultMaterial->transparency = 0.25f;
 
 	Vector3 n = Vector3(0, 1, 0);
 	Vector3 d = Vector3(10, 1, 0).Normalized();
@@ -56,7 +57,7 @@ void Tracer::Render()
 	printf("\nRender started\n");
 	std::clock_t timeStart = std::clock();
 
-	int supersampling = 10;
+	int supersampling = 1;
 
 	Vector3 lightDir = camera->view_from();
 //#pragma omp parallel for schedule(dynamic, 5) shared(src_32fc3_img, scene, surfaces)
@@ -64,7 +65,9 @@ void Tracer::Render()
 		for (int x = 0; x < width_; x++) {
 			Vector3 c = Vector3(0, 0, 0);
 			for (int i = 0; i < supersampling; i++) {
-				Ray rtc_ray = camera->GenerateRay(x + Random(-0.5f, 0.5f), y + Random(-0.5f, 0.5f));
+				Vector2 random = Vector2(Random(-0.5f, 0.5f), Random(-0.5f, 0.5f));
+				//Ray rtc_ray = camera->GenerateRay(x + random.x, y + random.y);
+				Ray rtc_ray = camera->GenerateRay(x, y);
 				c += TracePhong(rtc_ray, 0);
 
 				//src_32fc3_img.at<cv::Vec3d>(y, x) = TraceNormal(rtc_ray);
@@ -120,8 +123,8 @@ Vector3 Tracer::TracePhong(Ray ray, int deep) {
 	Vector3 normal = GetNormal(ray);
 	Vector3 viewDir = ray.dir;
 	Vector3 lightDir = (lightPos - point).Normalized();
-	Vector3 viewReflect = normal.Reflect(lightDir);
-	Vector3 lightReflect = normal.Reflect(viewDir);
+	Vector3 viewReflect = normal.Reflect(viewDir);
+	Vector3 lightReflect = normal.Reflect(lightDir);
 
 	//Vector2 tuv = triangle.texture_coord(ray.u, ray.v);
 	Vector3 halfVector = Vector3(camPos - point + lightPos - point).Normalized();
@@ -143,8 +146,8 @@ Vector3 Tracer::TracePhong(Ray ray, int deep) {
 	// snell law (index lomu - kam se paprsek odrazi), fresnel equation (pomer mezi propustnosti a odrazem)
 	// TODO: prekladova tabulka material -> index lomu
 	// normala muze byt v modelu otocena spatne - zjistovat, jestli jde paprsek ze vzduchu a pokud je dot(n,ray) zaporny, je otocena
-	Vector3 ambient = Vector3(0.1f, 0.1f, 0.1f);
-	Vector3 diffuse = Vector3(0.9f); //material->diffuse;
+	Vector3 ambient = material->ambient;
+	Vector3 diffuse = material->diffuse;
 	/*
 	if (tex_diff != NULL) {
 		Color4 texel_diff = tex_diff->get_texel(tuv.x, tuv.y);
@@ -152,7 +155,7 @@ Vector3 Tracer::TracePhong(Ray ray, int deep) {
 	}
 	*/
 
-	Vector3 reflected = TracePhong(Ray(point, lightReflect), deep + 1);
+	Vector3 reflected = TracePhong(Ray(point, viewReflect), deep + 1);
 	Vector3 retracted = Vector3(0, 0, 0);
 	float R = 1;
 	float T = 0;
@@ -161,13 +164,14 @@ Vector3 Tracer::TracePhong(Ray ray, int deep) {
 		float n2 = ray.ior == 1 ? mat_ior : 1;
 
 		// snell law
+		/*
 		Vector3 rd = viewDir;
 		float n_ratio = n1 / n2;
 		float cos_O2 = rd.DotProduct(-normal);
 		float cos_O1 = sqrt(MAX(0, 1 - n_ratio*n_ratio * (1 - cos_O2*cos_O2)));
 		Vector3 rr = -n_ratio * rd - (n_ratio * cos_O2 + cos_O1) * normal;
 		Vector3 lr = -normal.Reflect(rr);
-		
+
 		// fresnel equation
 		float cosi = cos_O2;
 		float cost = cos_O1;
@@ -179,6 +183,10 @@ Vector3 Tracer::TracePhong(Ray ray, int deep) {
 		float Rs = pow((n1cosi - n2cost) / (n1cosi + n2cost), 2);
 		float Rp = pow((n1cost - n2cosi) / (n1cost + n2cosi), 2);
 		R = (Rs + Rp) * 0.5f;
+		*/
+
+		Vector3 lr = GetRetractDir(viewDir, normal, n1, n2);
+		R = GetFresnelR(viewDir, normal, n1, n2);
 		//R = 0;
 		T = 1 - R;
 
@@ -208,6 +216,36 @@ Vector3 Tracer::TracePhong(Ray ray, int deep) {
 
 	returnFinish++;
 	return phong;
+}
+
+Vector3 Tracer::GetRetractDir(Vector3 dir, Vector3 normal, float n1, float n2) 
+{
+	Vector3 rd = dir;
+	float n_ratio = n1 / n2;
+	float cos_O2 = rd.DotProduct(-normal);
+	float cos_O1 = sqrt(MAX(0, 1 - n_ratio*n_ratio * (1 - cos_O2*cos_O2)));
+	Vector3 rr = -n_ratio * rd - (n_ratio * cos_O2 + cos_O1) * normal;
+	Vector3 lr = -normal.Reflect(rr);
+	return lr;
+}
+
+float Tracer::GetFresnelR(Vector3 dir, Vector3 normal, float n1, float n2)
+{
+	Vector3 rd = dir;
+	float n_ratio = n1 / n2;
+
+	float cosi = rd.DotProduct(-normal);
+	float cost = sqrt(MAX(0, 1 - n_ratio*n_ratio * (1 - cosi*cosi)));;
+	float n1cosi = n1 * cosi;
+	float n1cost = n1 * cost;
+	float n2cosi = n2 * cosi;
+	float n2cost = n2 * cost;
+
+	float Rs = pow((n1cosi - n2cost) / (n1cosi + n2cost), 2);
+	float Rp = pow((n1cost - n2cosi) / (n1cost + n2cosi), 2);
+	float R = (Rs + Rp) * 0.5f;
+
+	return R;
 }
 
 Vector3 Tracer::TraceLambert(Ray ray) {
@@ -255,7 +293,12 @@ Vector3 Tracer::GetColor(Ray &ray) {
 }
 
 Vector3 Tracer::GetPoint(Ray &ray, bool stepBack) {
-	return ray.eval(ray.tfar) - ((Vector3)ray.dir * 0.001f) * (stepBack ? 1 : -1);
+	//return ray.eval(ray.tfar) - ((Vector3)ray.dir * 0.001f) * (stepBack ? 1 : -1);
+	return EvalPoint(ray);
+}
+
+Vector3 Tracer::EvalPoint(Ray &ray) {
+	return ray.eval(ray.tfar);
 }
 
 Vector3 Tracer::GetLightPos() {
@@ -313,23 +356,44 @@ void Tracer::onMouse(int event, int x, int y, int flags, void* userdata)
 	Tracer* tracer = reinterpret_cast<Tracer*>(userdata);
 	cv::Vec3d c = tracer->src_32fc3_img.at<cv::Vec3d>(y, x);
 
+	Ray rtc_ray = tracer->camera->GenerateRay(x + Random(-0.5f, 0.5f), y + Random(-0.5f, 0.5f));
+	Vector3 cc = tracer->TracePhong(rtc_ray, 0);
+
 	printf("Debug for y = %d, x = %d\n", y, x);
 	printf("  color = (%d, %d, %d)\n", (int)(c.val[2] * 255), (int)(c.val[1] * 255), (int)(c.val[0] * 255));
 
 	Ray ray = tracer->camera->GenerateRay(x, y);
-
 	//rtcIntersect(*(tracer->scene), ray);
-
 	Intersector::intersect(tracer->sphere, ray);
-
 	if (ray.geomID == RTC_INVALID_GEOMETRY_ID) {
 		return;
 	}
 
-	Vector3 point = tracer->GetPoint(ray);
+	Vector3 point = tracer->EvalPoint(ray);
 	Vector3 normal = tracer->GetNormal(ray);
 
+	Vector3 viewDir = ray.dir;
+	Vector3 viewReflect = normal.Reflect(viewDir);
+
+	printf("  t = %.2f\n", ray.tfar);
+	printf("  point = (%.2f, %.2f, %.2f)\n", point.x, point.y, point.z);
 	printf("  normal = (%.2f, %.2f, %.2f)\n", normal.x, normal.y, normal.z);
+	printf("  viewDir = (%.2f, %.2f, %.2f)\n", viewDir.x, viewDir.y, viewDir.z);
+	printf("  viewReflect = (%.2f, %.2f, %.2f)\n", viewReflect.x, viewReflect.y, viewReflect.z);
+
+	Ray ray2 = Ray(point, viewReflect, 0.01f);
+	Intersector::intersect(tracer->sphere, ray2);
+	if (ray2.geomID != RTC_INVALID_GEOMETRY_ID) {
+		Vector3 point2 = tracer->EvalPoint(ray2);
+		Vector3 normal2 = tracer->GetNormal(ray2);
+		printf("  Reflect: \n");
+		printf("    point2 = (%.2f, %.2f, %.2f)\n", point2.x, point2.y, point2.z);
+		printf("    normal2 = (%.2f, %.2f, %.2f)\n", normal2.x, normal2.y, normal2.z);
+		printf("    t = %.2f\n", ray2.tfar);
+
+		Vector3 pointDiff = point - point2;
+		printf("    diff = (%.2f, %.2f, %.2f)\n", pointDiff.x, pointDiff.y, pointDiff.z);
+	}
 
 	Material* material = tracer->defaultMaterial;
 	//Surface* surface = tracer->surfaces[ray.geomID];
@@ -337,9 +401,6 @@ void Tracer::onMouse(int event, int x, int y, int flags, void* userdata)
 	//Texture* tex_diff = material->get_texture(Material::kDiffuseMapSlot);
 	float mat_ior = material->ior;
 	float transparency = material->transparency;
-
-	Vector3 viewDir = ray.dir;
-
 
 	float R = 1;
 	float T = 0;
@@ -350,33 +411,26 @@ void Tracer::onMouse(int event, int x, int y, int flags, void* userdata)
 		//n2 = 1;
 
 		Vector3 rd = viewDir;
-		float cos_O2 = rd.DotProduct(-normal);
-		if (cos_O2 < 0) {
-			printf("e!");
-			cos_O2 = 1;
-		}
-		float n_ratio = n1 / n2;
-		float cos_O1 = sqrt(MAX(0, 1 - n_ratio*n_ratio * (1 - cos_O2*cos_O2)));
-		Vector3 rr = -n_ratio * rd - (n_ratio * cos_O2 + cos_O1) * normal;
-		Vector3 lr = -normal.Reflect(rr);
-
-
-		float cosi = cos_O2;
-		float cost = cos_O1;
-		//float cost = abs(rr.DotProduct(normal));
-		float n1cosi = n1 * cosi;
-		float n1cost = n1 * cost;
-		float n2cosi = n2 * cosi;
-		float n2cost = n2 * cost;
-
-		float Rs = pow((n1cosi - n2cost) / (n1cosi + n2cost), 2);
-		float Rp = pow((n1cost - n2cosi) / (n1cost + n2cosi), 2);
-		R = (Rs + Rp) * 0.5f;
+		Vector3 lr = tracer->GetRetractDir(viewDir, normal, n1, n2);
+		float R = tracer->GetFresnelR(viewDir, normal, n1, n2);
 		//R = 0;
 		T = 1 - R;
 
 		printf("  R = %f\n", R);
 		printf("  T = %f\n", T);
+
+		if (T > 0) {
+			Ray retracted_ray = Ray(tracer->EvalPoint(ray), lr, 0.01f);
+			Intersector::intersect(tracer->sphere, retracted_ray);
+			if (retracted_ray.geomID != RTC_INVALID_GEOMETRY_ID) {
+				Vector3 point3 = tracer->GetPoint(retracted_ray);
+				Vector3 normal3 = tracer->GetNormal(retracted_ray);
+				printf("  Retract: \n");
+				printf("    point3 = (%.2f, %.2f, %.2f)\n", point3.x, point3.y, point3.z);
+				printf("    normal3 = (%.2f, %.2f, %.2f)\n", normal3.x, normal3.y, normal3.z);
+				printf("    t = %.2f\n", retracted_ray.tfar);
+			}
+		}
 
 		//return reflected * R * (dotSpec * material->specular) + retracted * T * material->diffuse;
 	}

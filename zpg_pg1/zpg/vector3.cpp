@@ -150,6 +150,12 @@ Vector3 operator/( const Vector3 & v, const float a )
 	return v * ( 1 / a );
 }
 
+bool operator==(const Vector3 & u, const Vector3 & v)
+{
+	Vector3 diff = u - v;
+	return diff.SqrL2Norm() < 0.01f;
+}
+
 void operator+=( Vector3 & u, const Vector3 & v )
 {
 	u.x += v.x;

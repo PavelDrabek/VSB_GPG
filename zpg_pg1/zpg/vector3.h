@@ -130,7 +130,7 @@ public:
 
 	// --- operátory ------
 
-	friend Vector3 operator-( const Vector3 & v );
+	friend Vector3 operator-(const Vector3 & v);
 
 	friend Vector3 operator+( const Vector3 & u, const Vector3 & v );
 	friend Vector3 operator-( const Vector3 & u, const Vector3 & v );
@@ -141,6 +141,7 @@ public:
 
 	friend Vector3 operator/( const Vector3 & v, const float a );
 
+	friend bool operator==(const Vector3 & u, const Vector3 & v);
 	friend void operator+=( Vector3 & u, const Vector3 & v );
 	friend void operator-=( Vector3 & u, const Vector3 & v );
 	friend void operator*=( Vector3 & v, const float a );
