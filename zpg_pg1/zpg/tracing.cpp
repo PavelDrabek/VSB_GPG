@@ -37,7 +37,7 @@ Tracer::Tracer(const int width, const int height)
 	//sphere = Sphere(Vector3(0.0f), 3);
 	defaultMaterial = new Material(std::string("test"), Vector3(0.1f), Vector3(1.0f), Vector3(1.0f), Vector3(0.0f), 0.9f, 0.9f, 1.46f);
 	defaultMaterial->transparency = 1.0f;
-	//defaultMaterial->transparency = 0.25f;
+	defaultMaterial->transparency = 0.25f;
 
 	Vector3 n = Vector3(0, 1, 0);
 	Vector3 d = Vector3(10, 1, 0).Normalized();

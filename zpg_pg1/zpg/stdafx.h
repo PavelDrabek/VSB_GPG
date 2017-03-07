@@ -71,6 +71,7 @@
 
 #include "cubemap.h"
 #include "camera.h"
+#include "quadric.h"
 #include "sphere.h"
 #include "intersector.h"
 

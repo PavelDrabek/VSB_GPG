@@ -19,6 +19,8 @@ public:
 	void ShowScene();
 	void ShowSceneLoop();
 
+	static Vector3 GetRetractDir(Vector3 dir, Vector3 normal, float n1, float n2);
+	static float GetFresnelR(Vector3 dir, Vector3 normal, float n1, float n2);
 	static void onMouse(int event, int x, int y, int, void*);
 
 	cv::Mat src_32fc3_img;
@@ -54,8 +56,6 @@ private:
 	Vector3 GetLightPos();
 	Vector3 GetLightDir(Vector3 point);
 	Vector3 GetColor(Ray &ray);
-	Vector3 GetRetractDir(Vector3 dir, Vector3 normal, float n1, float n2);
-	float GetFresnelR(Vector3 dir, Vector3 normal, float n1, float n2);
 
 	Vector3 GetCubeMapColor(Vector3 dir);
 
