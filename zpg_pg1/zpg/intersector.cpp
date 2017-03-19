@@ -58,26 +58,39 @@ bool Intersector::intersect(Quadric quadric, Ray &ray)
 	Vector3 A = ray.org;
 	Vector3 u = Vector3(ray.dir).Normalized();
 
-	float a11 = m.data[0];
-	float a12 = m.data[1];
-	float a13 = m.data[2];
-	float a14 = m.data[3];
-	float a22 = m.data[5];
-	float a23 = m.data[6];
-	float a24 = m.data[7];
-	float a33 = m.data[10];
-	float a34 = m.data[11];
-	float a44 = m.data[15];
+	float a11 = m.data()[0];
+	float a12 = m.data()[1];
+	float a13 = m.data()[2];
+	float a14 = m.data()[3];
+	float a22 = m.data()[5];
+	float a23 = m.data()[6];
+	float a24 = m.data()[7];
+	float a33 = m.data()[10];
+	float a34 = m.data()[11];
+	float a44 = m.data()[15];
 
 	float c = a11*A.x*A.x + a22*A.y*A.y + a33*A.z*A.z 
 		+ 2*a12*A.x*A.y + 2*a13*A.x*A.z + 2*a23*A.y*A.z 
-		+ 2*a14*A.x + 2*a24*A.y + 2*a34*A.z;
-	float b = 2*a11*A.x*A.x + 2*a22*A.y*u.y + 2*a33*A.z*u.z 
+		+ 2*a14*A.x + 2*a24*A.y + 2*a34*A.z + a44;
+	float b = 2*a11*A.x*u.x + 2*a22*A.y*u.y + 2*a33*A.z*u.z 
 		+ 2*a12*A.x*u.y + 2*a12*u.x*A.y + 2*a13*A.x*u.z + 2*a13*u.x*A.z
 		+ 2*a23*A.y*u.z + 2*a23*u.y*A.z + 2*a14*u.x 
-		+ 2*a14*u.x + 2*a24*u.y + 2*a34*u.z;
+		+ 2*a24*u.y + 2*a34*u.z;
 	float a = a11*u.x*u.x + a22*u.y*u.y + a33*u.z*u.z
-		+ 2*a12*u.x*u.y + 2*a13*u.x*u.z + 2*a23*u.x*u.z;
+		+ 2*a12*u.x*u.y + 2*a13*u.x*u.z + 2*a23*u.y*u.z;
+
+	float a1 = (a11 * SQR(u.x)) + (a22 * SQR(u.y)) + (a33 * SQR(u.z)) 
+		+ 2 * ((a12 * u.x * u.y) + (a13 * u.x * u.z) + (a23 * u.y * u.z));
+	float b1 = 2 * ((a11 * A.x * u.x) + (a22 * A.y * u.y) + (a33 * A.z * u.z) + (a12 * A.x * u.y) + (a12 * A.y * u.x) + (a13 * A.x * u.z) + (a13 * A.z * u.x)
+		+ (a23 * A.y * u.z) + (a23 * A.z * u.y) + (a14 * u.x) + (a24 * u.y) + (a34 * u.z));
+	float c1 = (a11 * SQR(A.x)) + (a22 * SQR(A.y)) + (a33 * SQR(A.z))
+		+ 2 * ((a12 * A.x * A.y) + (a13 * A.x * A.z) + (a23 * A.y * A.z)
+		+ (a14 * A.x) + (a24 * A.y) + (a34 * A.z)) + a44;
+
+
+	if (a != a1 || b != b1 || c != c1) {
+		printf("X");
+	}
 
 	float D = b * b - 4 * a * c;
 	if (D < 0) {
@@ -119,7 +132,7 @@ bool Intersector::intersect(Quadric quadric, Ray &ray)
 
 	ray.geomID = 0;
 	ray.tfar = t;
-	Vector3 normal = ((A + u * t) - S).Normalized();
+	Vector3 normal(nx, ny, nz);
 	ray.collided_normal = normal;
 	ray.Ng[0] = normal.x;
 	ray.Ng[1] = normal.y;

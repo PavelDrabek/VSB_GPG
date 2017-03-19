@@ -105,6 +105,9 @@
     <ClCompile Include="sphere.cpp">
       <Filter>Source Files\geom</Filter>
     </ClCompile>
+    <ClCompile Include="quadric.cpp">
+      <Filter>Source Files\geom</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -181,6 +184,9 @@
     </ClInclude>
     <ClInclude Include="test.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="quadric.h">
+      <Filter>Header Files\geom</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

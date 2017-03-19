@@ -26,6 +26,7 @@ Tracer::Tracer(const int width, const int height)
 	// default fov = 40
 	//camera = new Camera(width, height, Vector3(-140.0f, 110.0f, -175.0f), Vector3(0.0f, 40.0f, 0.0f), DEG2RAD(42.185f));
 	camera = new Camera(width, height, Vector3(0.0f, 0.0f, -3.0f), Vector3(0.0f, 0.0f, 0.0f), DEG2RAD(42.185f));
+	//camera = new Camera(width, height, Vector3(6.0f, 0.0f, 3.0f), Vector3(0.0f, 0.0f, 0.0f), DEG2RAD(42.185f));
     camera->Print();
 
 	//lightPos = camera->view_from();
@@ -96,7 +97,7 @@ Vector3 Tracer::TracePhong(Ray ray, int deep) {
 	}
 
 	//rtcIntersect(*scene, ray);
-	Intersector::intersect(sphere, ray);
+	Intersector::intersect(quadric, ray);
 	raysAll++;
 
 	if (ray.geomID == RTC_INVALID_GEOMETRY_ID) {
@@ -134,7 +135,7 @@ Vector3 Tracer::TracePhong(Ray ray, int deep) {
 	Ray lightRay = Ray(point, lightDir, 0.001f, (GetLightPos() - point).SqrL2Norm());
 
 	//rtcOccluded(*scene, lightRay);
-	Intersector::intersect(sphere, lightRay);
+	Intersector::intersect(quadric, lightRay);
 
 	int visibCoef = 1;
 	if (lightRay.geomID != -1) {
@@ -331,7 +332,7 @@ void Tracer::onMouse(int event, int x, int y, int flags, void* userdata)
 
 	Ray ray = tracer->camera->GenerateRay(x, y);
 	//rtcIntersect(*(tracer->scene), ray);
-	Intersector::intersect(tracer->sphere, ray);
+	Intersector::intersect(tracer->quadric, ray);
 	if (ray.geomID == RTC_INVALID_GEOMETRY_ID) {
 		return;
 	}
@@ -349,7 +350,7 @@ void Tracer::onMouse(int event, int x, int y, int flags, void* userdata)
 	printf("  viewReflect = (%.2f, %.2f, %.2f)\n", viewReflect.x, viewReflect.y, viewReflect.z);
 
 	Ray ray2 = Ray(point, viewReflect, 0.01f);
-	Intersector::intersect(tracer->sphere, ray2);
+	Intersector::intersect(tracer->quadric, ray2);
 	if (ray2.geomID != RTC_INVALID_GEOMETRY_ID) {
 		Vector3 point2 = tracer->EvalPoint(ray2);
 		Vector3 normal2 = tracer->GetNormal(ray2);
@@ -388,7 +389,7 @@ void Tracer::onMouse(int event, int x, int y, int flags, void* userdata)
 
 		if (T > 0) {
 			Ray retracted_ray = Ray(tracer->EvalPoint(ray), lr, 0.01f);
-			Intersector::intersect(tracer->sphere, retracted_ray);
+			Intersector::intersect(tracer->quadric, retracted_ray);
 			if (retracted_ray.geomID != RTC_INVALID_GEOMETRY_ID) {
 				Vector3 point3 = tracer->GetPoint(retracted_ray);
 				Vector3 normal3 = tracer->GetNormal(retracted_ray);
