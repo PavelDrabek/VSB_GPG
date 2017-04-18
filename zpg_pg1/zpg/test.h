@@ -88,9 +88,9 @@ namespace Testing
 	static bool testAll()
 	{
 		bool result = true;
-		result &= test_sphere_intersect();
-		result &= test_sphere_not_intersect();
-		result &= test_normal();
+		//result &= test_sphere_intersect();
+		//result &= test_sphere_not_intersect();
+		//result &= test_normal();
 		result &= test_reflection();
 
 		return result;

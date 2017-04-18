@@ -63,8 +63,9 @@ private:
 	Vector3 TraceLambert(Ray ray);
 	Vector3 TracePhong(Ray ray, int deep);
 
-	Sphere sphere = Sphere(Vector3(0.0f), 0.6f);
-	Quadric quadric = Quadric(Quadric::QuadricType::Paraboloid);
+	//Sphere sphere = Sphere(Vector3(0.0f), 0.6f);
+	//Quadric quadric = Quadric(Quadric::QuadricType::Paraboloid);
+	Sphere quadric = Sphere(Vector3(0.0f), 0.6f);
 	Material* defaultMaterial;
 
 	std::thread m_thread;
